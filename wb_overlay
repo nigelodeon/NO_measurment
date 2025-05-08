@@ -1,0 +1,66 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu May  8 10:43:57 2025
+script with functions to overlay Westerblot images and maybe improve in the future
+@author: Nixs
+"""
+import numpy as np
+import matplotlib.pyplot as plt
+from pathlib import Path
+from skimage.io import imread
+from skimage.color import rgb2gray
+from skimage.filters import threshold_otsu
+from skimage.segmentation import flood_fill
+
+def wb_overlay(path_marker, path_blot):
+    ''' function to overlay marker und immunoblot from westernblotting '''
+    image_marker = load_marker(path_marker)
+    image_blot = load_blot(path_blot)
+    
+    if image_marker.shape != image_blot.shape:
+        raise IndexError('images must be of same size!')
+    
+    overlay =   (image_marker + image_blot) / 2
+
+    plt.imshow(overlay, cmap='gray')
+    plt.axis('off')
+    
+    
+def load_image(path):
+    img = imread(path)
+    img = rgb2gray(img)
+    
+    print(f'load image, mean int: {np.mean(img)}')
+    img = img
+    return img
+
+def load_marker(path):
+    ## loads image of marker and removes noise and border
+    img_m = load_image(path)
+    thr = threshold_otsu(img_m)
+
+    #img_m = img_m * (1+(img_m>thr)
+    
+    img_m = flood_fill(img_m, (10,10), 0, tolerance= 0.1)
+    plt.imshow(img_m, cmap='gray')
+    plt.show()
+    return img_m
+
+def load_blot(path):
+    img_b = load_image(path)
+    print(f'load_blot, mean int: {np.mean(img_b)}')
+    img_b = img_b * (img_b > 0.1)
+    img_b[:, 0:50]=1
+    print(np.max(img_b))
+    plt.imshow(img_b, cmap='gray')
+    plt.show()
+    return img_b
+
+if __name__== '__main__':
+    path = Path('P:/AG Dehghani_Archiv/niklas/Transfektion/WesternBlot/WesternBlots_nik/ChemiDoc_Images_2024_12_20')
+    path_marker = path / Path('admin 2024-12-19 11h30m00s Colorimetric 0.168s(Colorimetric).tif')
+    path_blot = path/ Path('admin 2024-12-19 11h28m28s Chemiluminescence 42.238s(Chemiluminescence).tif')
+    
+    wb_overlay(path_marker, path_blot)
+    
+    
